@@ -1,0 +1,139 @@
+
+
+@font-face {
+    font-family: 'MyFont'; /*a name to be used later*/
+    src: url('TypoGraphica.otf'); /*URL to font*/
+}
+
+body {
+    //background-color: #d0e4fe;
+	margin:0;
+	font-family: 'Georgia', serif;
+	//font-family: MyFont;
+	overflow-y:hidden;
+	overflow-x:hidden;
+	//background: linear-gradient(lightgrey, grey);
+	//background: -moz-linear-gradient(lightgrey, grey);
+	//background-image: url("backgrounds/2260.jpg");
+	background-image: url("backgrounds/green.jpg");
+	background-size: 100% 100%;
+	background-attachment: fixed;
+	 -webkit-user-select: none;
+     -moz-user-select: -moz-none;
+      -ms-user-select: none;
+          user-select: none;
+	//width:50%;
+}
+
+.inline{
+	display:inline-block;
+}
+
+.Building_Case{
+	border: 5px solid black;
+	height:60px;
+	width:300px;
+	margin-left:30px;
+	margin-right:30px;
+	margin-bottom:50px;
+	cursor: pointer;
+	display:inline-block;
+}
+
+.Building_Case img{	
+	height:60px;
+	width:60px;	
+}
+
+.Building_Case div{	
+	display:inline;
+	vertical-align:middle;
+	text-align:center;
+	height:60px;
+}
+
+.Building_Name{
+	width:180px;	
+}
+
+.Building_Amount{
+	width:60px;	
+}
+
+#Resource_Col div{
+	padding:5px;
+	padding-left:20px;
+	
+}
+
+#LeftColumn{
+	position:absolute;
+	//background-color: lightgrey;
+	left:0px;
+	top:135px;
+	width:360px;
+	bottom:0px;
+	overflow-y:auto;
+}
+
+
+
+#RightColumn{
+	//height:100%;
+	width:20%; 
+	position:absolute;
+	top:135px;
+	right:0px;
+	bottom:0px;
+	overflow-x:hidden;
+	overflow-y:hidden;
+	
+
+}
+
+#CenterColumn{
+	position:absolute;
+	left:360px;
+	top:135px;
+	right:20%;
+	bottom:0px;
+	min-width:100px;
+	overflow-x:hidden;
+	overflow-y:hidden;
+
+	//border: 5px solid transparent;
+	//border-image: url(backgrounds/Basic_border.png) 5;
+	border: 15px solid transparent;
+	border-width:0 15 0 15;
+	border-image: url(backgrounds/border_fancy.png) 15;
+}
+
+
+/*
+@media (max-width: 1500px) {
+    html { font-size: 80%; }
+	.Building_Case{height:64px;}
+	.BuildingPic{height:64px;width:64px;}
+	.Upgrade_Case{height:52px;}
+	.Upgrade_Case img{height:52px;width:52px;}
+	#destroying_bar{height:52px;}
+	#destroying_bar p{margin-top: -47px;}
+	#Resource_Header{height : 100px;}
+	#LeftColumn{top:115px;width:320px;}
+	#CenterColumn{top:115px;left:320px;}
+	#RightColumn{top:115px;}
+	.rarebrickpic{height:24px;width:24px;}
+	.padlock{height:32px;width:32px;}
+	.bonuspointpic{height:18px;width:18px;}
+	#Upgrades_Header {height:32px;}
+	#Store{top:57px;}
+	#ResourceRareBricks td{font-size:80%;}
+	//.respic{width:30px;height:30px;}
+	.card{width:80px;height:80px;}
+	.card_container{width:280px;margin-bottom:15px;margin-right:20px;height:110px;margin-top:15px;}
+	.card_container .button{margin:2px;}
+	.cardprice{width:16px;height:16px;}
+	.card_buttons{height:80px;}
+	.agent_wrapping{width:90%;}
+}
+*/
