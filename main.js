@@ -181,7 +181,7 @@ Game.Init = function(){
 			str += '<div>city</div>';
 			for (var i in Game.Buildings) {
 				var me = Game.Buildings[i];
-				str+= '<div class="Building_Case"><img src="img/'+me.name+'.png"><div class="Building_Name">'+me.name+'</div><div class="Building_Amount" id="'+me.name+'_Amount">'+me.amount+'</div></div>';
+				str+= '<div class="Building_Case" onclick="Game.BuildingsById['+me.id+'].Buy()"><img src="img/'+me.name+'.png"><div class="Building_Name">'+me.name+'</div><div class="Building_Amount" id="'+me.name+'_Amount">'+me.amount+'</div></div>';
 			}
 		}
 		if (Game.onMenu=='stats') {
@@ -251,6 +251,17 @@ Game.Init = function(){
 		if (i < 10) {i = "0" + i};  // add zero in front of numbers < 10
 		return i;
 	}
+	
+	Game.Enough_Resources=function(basePrice)
+	{
+		var enough_resources = 1;
+		for (var i in basePrice)
+		{
+			var price=basePrice[i].val; //*Math.pow(Game.priceIncrease,this.amount);
+			if (price > Game.Resources[basePrice[i].name].amount)  enough_resources=0;
+		}
+		return enough_resources;
+	}
 
 	//////////////////////////////////
 	//			BUILDINGS			//
@@ -261,14 +272,23 @@ Game.Init = function(){
 	Game.BuildingsById=[];
 	Game.BuildingsN=0;
 	
-	Game.Building=function(name,commonName)
+	Game.Building=function(name,price)
 	{
 		this.id=Game.BuildingsN;
 		this.name=name;
-		this.common=commonName;
+		//this.common=commonName;
+		this.basePrice=price;
 		this.amount=0;
 		this.locked=1;
 		
+		this.Buy=function() 
+		{		
+			if(Game.Enough_Resources(this.basePrice))
+			{
+				
+			}
+
+		}
 		
 		Game.Buildings[this.name]=this;
 		Game.BuildingsById[this.id]=this;
@@ -276,9 +296,9 @@ Game.Init = function(){
 		return this;
 	}
 	
-	new Game.Building('Mine','Gold');
-	new Game.Building('Fort','Iron');
-	new Game.Building('Lumber Mill','Wood');
+	new Game.Building('Mine',[{ name : "gold", val: 10 }]);
+	new Game.Building('Fort',[{ name : "gold", val: 12 }]);
+	new Game.Building('Lumber Mill',[{ name : "gold", val: 20 },{ name : "wood", val: 40 }]);
 	
 	
 	//////////////////////////////////
@@ -310,10 +330,10 @@ Game.Init = function(){
 		return this;
 	}
 	
-	new Game.Resource('Gold','Gold');
-	new Game.Resource('Iron','Iron');
-	new Game.Resource('Wood','Wood');
-	new Game.Resource('Leather','Leather');
+	new Game.Resource('gold','Gold');
+	new Game.Resource('iron','Iron');
+	new Game.Resource('wood','Wood');
+	new Game.Resource('leather','Leather');
 	
 	Game.InitResourceHeader=function(){
 		var str='';
