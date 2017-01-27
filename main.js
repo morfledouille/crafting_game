@@ -181,7 +181,7 @@ Game.Init = function(){
 			str += '<div>city</div>';
 			for (var i in Game.Buildings) {
 				var me = Game.Buildings[i];
-				str+= '<div class="Building_Case" onclick="Game.BuildingsById['+me.id+'].Buy()"><img src="img/'+me.name+'.png"><div class="Building_Name">'+me.name+'</div><div class="Building_Amount" id="'+me.name+'_Amount">'+me.amount+'</div></div>';
+				str+= '<div class="Building_Case" id="Building_Case_'+me.id+'" onmouseout="Game.RemoveTooltip(Game.BuildingsById['+me.id+'])" onmouseover="Game.GetTooltip(Game.BuildingsById['+me.id+'])" onclick="Game.BuildingsById['+me.id+'].Buy()"><img src="img/'+me.name+'.png"><div class="Building_Name">'+me.name+'</div><div class="Building_Amount">'+me.amount+'</div></div>';
 			}
 		}
 		if (Game.onMenu=='stats') {
@@ -252,13 +252,22 @@ Game.Init = function(){
 		return i;
 	}
 	
-	Game.Enough_Resources=function(basePrice)
+	Game.GetPrice=function(item,p_index)
+	{
+		var price = item.basePrice[p_index].val;
+		if (item.hasOwnProperty("amount")) price *= Math.pow(1.15,item.amount);
+		return Math.floor(price);
+	}
+	
+	Game.Enough_Resources=function(item)
 	{
 		var enough_resources = 1;
-		for (var i in basePrice)
+		var price ;
+		for (var i in item.basePrice)
 		{
-			var price=basePrice[i].val; //*Math.pow(Game.priceIncrease,this.amount);
-			if (price > Game.Resources[basePrice[i].name].amount)  enough_resources=0;
+			//var price=item.basePrice[i].val; //*Math.pow(Game.priceIncrease,this.amount);
+			price = Game.GetPrice(item,i);
+			if (price > Game.Resources[item.basePrice[i].name].amount)  enough_resources=0;
 		}
 		return enough_resources;
 	}
@@ -283,10 +292,21 @@ Game.Init = function(){
 		
 		this.Buy=function() 
 		{		
-			if(Game.Enough_Resources(this.basePrice))
+			Game.GetTooltip(this);
+		
+			if(Game.Enough_Resources(this))
 			{
-				
+				var cost;
+				for (var i in this.basePrice)
+				{
+					cost = Game.GetPrice(this,i);
+					Game.Spend(this.basePrice[i].name,cost)
+				}
+				this.amount ++;
+				$("#Building_Case_"+this.id+" .Building_Amount").html(this.amount);
 			}
+			
+			
 
 		}
 		
@@ -294,12 +314,35 @@ Game.Init = function(){
 		Game.BuildingsById[this.id]=this;
 		Game.BuildingsN++;
 		return this;
-	}
+	} 
 	
 	new Game.Building('Mine',[{ name : "gold", val: 10 }]);
 	new Game.Building('Fort',[{ name : "gold", val: 12 }]);
 	new Game.Building('Lumber Mill',[{ name : "gold", val: 20 },{ name : "wood", val: 40 }]);
 	
+	Game.ComputeTooltip=function()
+	{
+		var tooltip = ''
+	}
+	
+	Game.GetTooltip=function(item) {
+		
+		//var tooltip = Game.CardsById[card].ComputeCardTooltip();
+		var tooltip = "jojo labricot"
+		$("#Building_Case_"+item.id).tooltipster({
+			content: tooltip,				//once the tooltips are html, $(tooltip) instead
+			theme: 'tooltipster-light',
+			maxWidth:350,
+			position:'left',
+			speed: 0
+		});
+		$("#Building_Case_"+item.id).tooltipster('show');
+	}
+	
+	Game.RemoveTooltip=function(what) {
+		$("#Building_Case_"+what.id).tooltipster('destroy');
+
+	}
 	
 	//////////////////////////////////
 	//			RESSOURCES			//
