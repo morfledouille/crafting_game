@@ -121,15 +121,16 @@ Game.Init = function(){
 
 	
 	Game.recalculateGains=1;
-	
+
 	
 	Game.SaveTo='testtest';
 	
-	Game.UpgradesInStore=[];
+	Game.CraftsInProgress = [];
+	
 	
 	
 	//latency stuff
-	Game.fps=30;
+	Game.fps=10;
 	Game.T=0;
 	Game.accumulatedDelay=0;
 	Game.time= Date.now();
@@ -153,9 +154,9 @@ Game.Init = function(){
 		str+= '<button class="inline" id="menu_options">bub</button>';
 
 		$('#RightColumn').html(str);
-		AddEvent(l('menu_wall'),'click',function(){Game.ShowMenu('city');});
-		AddEvent(l('menu_stats'),'click',function(){Game.ShowMenu('stats');});
-		AddEvent(l('menu_options'),'click',function(){Game.ShowMenu('options');});
+		AddEvent(l('menu_wall'),'click',function(){Game.ShowMenu('generators');});
+		AddEvent(l('menu_stats'),'click',function(){Game.ShowMenu('city');});
+		AddEvent(l('menu_options'),'click',function(){Game.ShowMenu('craft');});
 
 
 
@@ -176,35 +177,94 @@ Game.Init = function(){
 	
 	Game.UpdateMenu=function(){
 		var str = '';
-		if (Game.onMenu=='city') {
+		if (Game.onMenu=='generators') 
+		{
+			
+			str+='<hr><div  class="section">Generators</div><hr>';
+			str += '<table>';
+			for (var i in Game.GeneratorsById) {
+				var me = Game.GeneratorsById[i];
+				if (i%3 == 0)
+				{
+					str += '<tr><th colspan="3" class="Generator_Header"> TOTO le CHAMEAU </th></tr>';
+					str += '<tr class="Generator_Line">';
+				}
+				str+= '<td class="Generator_Case" id="Generator_Case_'+me.id+'" onclick="Game.GeneratorsById['+me.id+'].Select()">'+me.name+'</td>';
+				if (i%3 == 2)
+				{
+					str += '</tr>';
+				}
+			}
+			str += '</table>';
+		}
+		if (Game.onMenu=='city') 
+		{
 			str+='<hr><div  class="section">City</div><hr>';
-			str += '<div>city</div>';
 			for (var i in Game.Buildings) {
 				var me = Game.Buildings[i];
 				str+= '<div class="Building_Case" id="Building_Case_'+me.id+'" onmouseout="Game.RemoveTooltip(Game.BuildingsById['+me.id+'])" onmouseover="Game.GetTooltip(Game.BuildingsById['+me.id+'])" onclick="Game.BuildingsById['+me.id+'].Buy()"><img src="img/'+me.name+'.png"><div class="Building_Name">'+me.name+'</div><div class="Building_Amount">'+me.amount+'</div></div>';
 			}
 		}
-		if (Game.onMenu=='stats') {
+		if (Game.onMenu=='craft') 
+		{
+			str+='<hr><div  class="section">Workshop</div><hr>';
+			str+='<div id="craft_section_1">';
+			for (var i in Game.Objects) {
+				var me = Game.Objects[i];
+				str+= '<img onmouseout="Game.RemoveTooltip(Game.ObjectsById['+me.id+'])" onmouseover="Game.GetTooltip(Game.ObjectsById['+me.id+'])" onclick="Game.ObjectsById['+me.id+'].Craft()" src="img/'+me.code+'.png">';
+			}
+			str+='</div>';
+			str+='<div id="craft_section_2">';
+			for (var i in Game.CraftsInProgress) {
+				str += Game.GetCraftDOM(i);
+			}
+			str+='</div>';
+
+		}
+		if (Game.onMenu=='stats') 
+		{
 			str += 'satd';
 		}
-		if (Game.onMenu=='options') {
+		if (Game.onMenu=='options') 
+		{
 			str += 'options';
 		}
 		$('#CenterColumn').html(str);
 	}			
 
 	Game.Spend=function(What,howmuch)
-		{
-			Game.Resources[What].amount-=howmuch;
-		}
+	{
+		Game.Resources[What].amount-=howmuch;
+	}
 	
 	Game.Earn=function(What,howmuch)
-		{
-			Game.Resources[What].amount +=howmuch;
-			Game.Resources[What].total +=howmuch;
-		}
+	{
+		Game.Resources[What].amount +=howmuch;
+		Game.Resources[What].total +=howmuch;
+	}
 	
-
+	Game.CalculateGains = function()
+	{
+		for (var i in Game.Resources) 
+		{
+			Game.Resources[i].Ps=0;
+		}
+		
+		for (var i in Game.Generators)
+		{
+			me = Game.Generators[i];
+			if(me.active)
+			{
+				for (var j in me.prod)
+				{
+					Game.Resources[me.prod[j].name].Ps += me.prod[j].val;
+				}
+			}
+		}
+		Game.Resources['wood'].Ps *= (1 + 0.2*Game.Buildings['Mine'].amount );
+		Game.recalculateGains=0;
+		Game.InitResourceHeader();
+	}
 	
 	
 	Game.GetTime2=function(time) {
@@ -271,7 +331,116 @@ Game.Init = function(){
 		}
 		return enough_resources;
 	}
-
+	
+	//////////////////////////////////
+	//			ITEMS				//
+	//////////////////////////////////
+	
+	
+	Game.Objects=[];
+	Game.ObjectsById=[];
+	Game.ObjectsN=0;
+	
+	Game.Object=function(name,code,type,desc,price,time)
+	{
+		this.id=Game.ObjectsN;
+		this.name=name;
+		//this.common=commonName;
+		this.basePrice=price;
+		this.time = time;
+		this.desc = desc;
+		this.locked=1;
+		this.title="Item";
+		
+		this.Craft=function()
+		{
+			if(Game.Enough_Resources(this))
+			{
+				var cost;
+				for (var i in this.basePrice)
+				{
+					cost = Game.GetPrice(this,i);
+					Game.Spend(this.basePrice[i].name,cost)
+				}
+				Game.CraftsInProgress.push({id:this.id,time:this.time*Game.fps});
+				//Game.UpdateMenu();
+				var str = Game.GetCraftDOM(Game.CraftsInProgress.length-1);
+				$('#craft_section_2').append(str);
+				
+			}
+		}
+		
+		this.Finish = function()
+		{
+			for (var i in Game.CraftsInProgress)
+				{
+					me = Game.CraftsInProgress[i];
+					if (me.id == this.id && me.time < 1)
+					{
+						//WIP can be problematic since it makes no difference between several items with the same id, but the chances are they were crafted as the same time are very low
+						Game.CraftsInProgress.splice(i,1);
+						this.Remove(i);
+						break;
+					}
+				}
+			this.amount++;
+		}
+		
+		
+		this.Remove = function(index)
+		{
+			$('#Craft_Case_'+index).remove();
+			//very messy WIP
+			for (var i = Number(index+1); i<=Game.CraftsInProgress.length ;i++)
+			{
+				//alert(i);
+				$('#Craft_Case_'+i).attr("id", "Craft_Case_"+(i-1));
+			}
+		}
+		
+		Game.Objects[this.name]=this;
+		Game.ObjectsById[this.id]=this;
+		Game.ObjectsN++;
+		return this;
+	} 
+	
+	new Game.Object('sword','sword','','',[{ name : "iron", val: 10 }],2);
+	new Game.Object('sword2','sword2','','',[{ name : "wood", val: 12 }],4);
+	new Game.Object('sword3','sword3','','',[{ name : "leather", val: 12 }],3);
+	
+	Game.GetCraftDOM = function(index)
+		{
+			var me = Game.CraftsInProgress[index];
+			var str = '';
+			str+= '<div id="Craft_Case_'+index+'" class="Craft_Case">';
+				
+			str+= '<img src="img/'+Game.ObjectsById[me.id].code+'.png">';
+			
+			str+='<div class="crafting_bar"><div class="crafting_loading"></div>';
+			str+='<p><strong><span class="bar_text">'+Game.GetTime2(me.time/Game.fps)+'</span></strong></p>';
+			str+='</div>';
+			
+			str+= '<img src="img/cancel.png">';
+			
+			str+='</div>';
+			return str;
+		}
+	
+	Game.UpdateCraftingBars = function() {
+		for (var i in Game.CraftsInProgress)
+		{
+			var me=Game.CraftsInProgress[i];
+		
+		
+			var totaltime = Game.ObjectsById[me.id].time*Game.fps;
+			var barfill = ~~((totaltime - me.time) / totaltime * 100);
+			$("#Craft_Case_"+i+" .crafting_loading").width(barfill+"%");
+		
+				
+		}
+		
+	}
+	
 	//////////////////////////////////
 	//			BUILDINGS			//
 	//////////////////////////////////
@@ -281,18 +450,20 @@ Game.Init = function(){
 	Game.BuildingsById=[];
 	Game.BuildingsN=0;
 	
-	Game.Building=function(name,price)
+	Game.Building=function(name,desc,price)
 	{
 		this.id=Game.BuildingsN;
 		this.name=name;
 		//this.common=commonName;
 		this.basePrice=price;
+		this.desc = desc;
 		this.amount=0;
 		this.locked=1;
+		this.title="Building";
 		
 		this.Buy=function() 
 		{		
-			Game.GetTooltip(this);
+			//Game.GetTooltip(this);
 		
 			if(Game.Enough_Resources(this))
 			{
@@ -304,6 +475,9 @@ Game.Init = function(){
 				}
 				this.amount ++;
 				$("#Building_Case_"+this.id+" .Building_Amount").html(this.amount);
+				Game.recalculateGains = 1;
+				Game.RemoveTooltip(this);
+				Game.GetTooltip(this);
 			}
 			
 			
@@ -316,34 +490,92 @@ Game.Init = function(){
 		return this;
 	} 
 	
-	new Game.Building('Mine',[{ name : "gold", val: 10 }]);
-	new Game.Building('Fort',[{ name : "gold", val: 12 }]);
-	new Game.Building('Lumber Mill',[{ name : "gold", val: 20 },{ name : "wood", val: 40 }]);
+	new Game.Building('Mine','improve iron generation from all sources',[{ name : "wood", val: 10 }]);
+	new Game.Building('Fort','improve iron generation from all sources',[{ name : "gold", val: 12 }]);
+	new Game.Building('Lumber Mill','improve iron generation from all sources',[{ name : "gold", val: 20 },{ name : "wood", val: 40 }]);
 	
-	Game.ComputeTooltip=function()
+	Game.ComputeTooltip=function(item)
 	{
 		var tooltip = ''
+		tooltip += '<div class="title"><strong>'+item.name+'</strong></div><hr>';
+		for (var j in item.basePrice) {
+			//that part needs work
+			price = Beautify(Game.GetPrice(item,j));
+			if (Game.Resources[item.basePrice[j].name].amount < item.basePrice[j].val) price = price.fontcolor("red");
+			tooltip += '<div class="'+item.basePrice[j].name+'">'+item.basePrice[j].name+' : <strong>'+price+'</strong></div> ';
+		}
+		tooltip += '<hr><div>'+item.desc+'</div>';
+		return tooltip;
 	}
 	
 	Game.GetTooltip=function(item) {
 		
 		//var tooltip = Game.CardsById[card].ComputeCardTooltip();
-		var tooltip = "jojo labricot"
+		var tooltip = Game.ComputeTooltip(item);
 		$("#Building_Case_"+item.id).tooltipster({
-			content: tooltip,				//once the tooltips are html, $(tooltip) instead
+			content: $(tooltip),				//once the tooltips are html, $(tooltip) instead
 			theme: 'tooltipster-light',
 			maxWidth:350,
 			position:'left',
 			speed: 0
 		});
+		//var dest = '';
+		//if (item.title ==  "Building")
 		$("#Building_Case_"+item.id).tooltipster('show');
 	}
 	
-	Game.RemoveTooltip=function(what) {
-		$("#Building_Case_"+what.id).tooltipster('destroy');
+	Game.RemoveTooltip=function(item) {
+		$("#Building_Case_"+item.id).tooltipster('destroy');
 
 	}
 	
+	//////////////////////////////////
+	//			GENERATORS			//
+	//////////////////////////////////
+	
+	
+	Game.Generators=[];
+	Game.GeneratorsById=[];
+	Game.GeneratorsN=0;
+	
+	Game.Generator=function(name,desc,prod)
+	{
+		this.id=Game.GeneratorsN;
+		this.name=name;
+		//this.common=commonName;
+		this.prod=prod;
+		this.desc = desc;
+		this.locked=1;
+		this.active=0;
+		this.title="Generator";
+		
+		this.Select = function()
+		{
+			col = ~~(this.id/3);
+			for (var i=3*col ; i< 3*col+3 ; i++)
+			{
+				Game.GeneratorsById[i].active = 0;
+				$('#Generator_Case_'+i).css("background-color","white")
+			}
+			this.active = 1;
+			$('#Generator_Case_'+this.id).css("background-color","grey")
+			Game.recalculateGains=1;
+		}
+		
+		Game.Generators[this.name]=this;
+		Game.GeneratorsById[this.id]=this;
+		Game.GeneratorsN++;
+		return this;
+	} 
+	
+	new Game.Generator('Gen1_A','',[{ name : "iron", val: 10 }]);
+	new Game.Generator('Gen1_B','',[{ name : "wood", val: 12 }]);
+	new Game.Generator('Gen1_C','',[{ name : "leather", val: 12 }]);
+	new Game.Generator('Gen2_A','',[{ name : "iron", val: 10 }]);
+	new Game.Generator('Gen2_B','',[{ name : "wood", val: 12 }]);
+	new Game.Generator('Gen2_C','',[{ name : "leather", val: 12 }]);
+	
+	Game.GeneratorsById[1].active = 1;
 	//////////////////////////////////
 	//			RESSOURCES			//
 	//////////////////////////////////
@@ -365,6 +597,7 @@ Game.Init = function(){
 		//this.byhand=0;
 		//this.clickpow=0;
 		this.locked=1;
+		this.title="Resource";
 		
 		
 		Game.Resources[this.name]=this;
@@ -467,6 +700,7 @@ Game.Init = function(){
 	*/
 	
 	//Game.LoadSave(Game.SaveTo);
+	Game.CalculateGains();
 	Game.InitResourceHeader();
 	Game.ShowMenu();
 	Game.BuildMenu();
@@ -480,7 +714,7 @@ Game.Init = function(){
 Game.Logic=function() {
 
 	
-	//if (Game.recalculateGains) Game.CalculateGains();
+	if (Game.recalculateGains) Game.CalculateGains();
 	//if (Game.upgradesToRebuild) Game.RebuildUpgrades();
 	//if (Game.upgradesToAdd) Game.AddUpgrades();
 	
@@ -491,7 +725,30 @@ Game.Logic=function() {
 		$("#"+i+"_Amount").html(Beautify(Game.Resources[i].amount));
 	}
 	
+	
+	
 	//Game.UpdateParticles();
+	
+	for (var i in Game.CraftsInProgress)
+	{
+		me = Game.CraftsInProgress[i];
+		me.time --;
+		if (!(me.time%Game.fps))
+		{
+			var displayed_time = Game.GetTime2(me.time/Game.fps);
+			$("#Craft_Case_"+i+" .bar_text").html(displayed_time);
+		}
+		if (!me.time)
+		{
+			Game.ObjectsById[me.id].Finish();
+		}
+	}
+	
+	if (Game.onMenu=='craft') 
+	{
+		Game.UpdateCraftingBars();
+	}
+
 	
 	Game.T++;
 }
