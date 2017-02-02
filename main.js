@@ -126,8 +126,11 @@ Game.Init = function(){
 	Game.SaveTo='testtest';
 	
 	Game.CraftsInProgress = [];
+	Game.AdvInStore = [];
 	
+	Game.ItemTypes=["sword","dagger","axe"];
 	
+	Game.onCraftMenu = "sword";
 	
 	//latency stuff
 	Game.fps=10;
@@ -202,16 +205,22 @@ Game.Init = function(){
 			str+='<hr><div  class="section">City</div><hr>';
 			for (var i in Game.Buildings) {
 				var me = Game.Buildings[i];
-				str+= '<div class="Building_Case" id="Building_Case_'+me.id+'" onmouseout="Game.RemoveTooltip(Game.BuildingsById['+me.id+'])" onmouseover="Game.GetTooltip(Game.BuildingsById['+me.id+'])" onclick="Game.BuildingsById['+me.id+'].Buy()"><img src="img/'+me.name+'.png"><div class="Building_Name">'+me.name+'</div><div class="Building_Amount">'+me.amount+'</div></div>';
+				str+= '<div class="Building_Case" id="Building_Case_'+me.id+'" onmouseout="Game.RemoveTooltip(\'Building_Case_'+me.id+'\')" onmouseover="Game.GetTooltip(Game.BuildingsById['+me.id+'],\'Building_Case_'+me.id+'\')" onclick="Game.BuildingsById['+me.id+'].Buy()"><img src="img/'+me.name+'.png"><div class="Building_Name">'+me.name+'</div><div class="Building_Amount">'+me.amount+'</div></div>';
 			}
 		}
 		if (Game.onMenu=='craft') 
 		{
 			str+='<hr><div  class="section">Workshop</div><hr>';
+			str+='<div>';
+			for (var i in Game.ItemTypes)
+			{
+				//str+='<button>'++'</button>';
+			}
+			str+='</div>';
 			str+='<div id="craft_section_1">';
 			for (var i in Game.Objects) {
 				var me = Game.Objects[i];
-				str+= '<img onmouseout="Game.RemoveTooltip(Game.ObjectsById['+me.id+'])" onmouseover="Game.GetTooltip(Game.ObjectsById['+me.id+'])" onclick="Game.ObjectsById['+me.id+'].Craft()" src="img/'+me.code+'.png">';
+				if(Game.onCraftMenu == me.type) str+= '<img id="Craft_Item_1_'+me.id+'" onmouseout="Game.RemoveTooltip(\'Craft_Item_1_'+me.id+'\')" onmouseover="Game.GetTooltip(Game.ObjectsById['+me.id+'],\'Craft_Item_1_'+me.id+'\')" onclick="Game.ObjectsById['+me.id+'].Craft()" src="img/'+me.code+'.png">';
 			}
 			str+='</div>';
 			str+='<div id="craft_section_2">';
@@ -234,13 +243,14 @@ Game.Init = function(){
 
 	Game.Spend=function(What,howmuch)
 	{
-		Game.Resources[What].amount-=howmuch;
+		var Mat = Game.TypeOfMat(What);
+		Mat.amount-=howmuch;
 	}
 	
 	Game.Earn=function(What,howmuch)
 	{
-		Game.Resources[What].amount +=howmuch;
-		Game.Resources[What].total +=howmuch;
+		var Mat = Game.TypeOfMat(What);
+		Mat.amount +=howmuch;
 	}
 	
 	Game.CalculateGains = function()
@@ -312,10 +322,16 @@ Game.Init = function(){
 		return i;
 	}
 	
+	Game.TypeOfMat=function(what)
+	{
+		if (Game.Resources[what])	return Game.Resources[what];
+		else return Game.Objects[what];
+	}
+	
 	Game.GetPrice=function(item,p_index)
 	{
 		var price = item.basePrice[p_index].val;
-		if (item.hasOwnProperty("amount")) price *= Math.pow(1.15,item.amount);
+		if (item.title == "Building") price *= Math.pow(1.15,item.amount);
 		return Math.floor(price);
 	}
 	
@@ -325,9 +341,9 @@ Game.Init = function(){
 		var price ;
 		for (var i in item.basePrice)
 		{
-			//var price=item.basePrice[i].val; //*Math.pow(Game.priceIncrease,this.amount);
 			price = Game.GetPrice(item,i);
-			if (price > Game.Resources[item.basePrice[i].name].amount)  enough_resources=0;
+			var Mat = Game.TypeOfMat(item.basePrice[i].name);
+			if (price > Mat.amount)  enough_resources=0;
 		}
 		return enough_resources;
 	}
@@ -341,14 +357,17 @@ Game.Init = function(){
 	Game.ObjectsById=[];
 	Game.ObjectsN=0;
 	
-	Game.Object=function(name,code,type,desc,price,time)
+	Game.Object=function(name,code,type,desc,gold,price,time)
 	{
 		this.id=Game.ObjectsN;
 		this.name=name;
 		//this.common=commonName;
 		this.basePrice=price;
 		this.time = time;
+		this.type = type;
 		this.desc = desc;
+		this.gold = gold;
+		this.amount=0;
 		this.locked=1;
 		this.title="Item";
 		
@@ -363,12 +382,31 @@ Game.Init = function(){
 					Game.Spend(this.basePrice[i].name,cost)
 				}
 				Game.CraftsInProgress.push({id:this.id,time:this.time*Game.fps});
-				//Game.UpdateMenu();
 				var str = Game.GetCraftDOM(Game.CraftsInProgress.length-1);
 				$('#craft_section_2').append(str);
 				
 			}
 		}
+		
+		this.ComputeTooltip=function()
+		{
+			var tooltip = ''
+			tooltip += '<div class="title"><strong>'+this.name+'</strong></div><hr>';
+			tooltip += '<div>owned : <strong>'+this.amount+'</strong></div><hr>';
+			tooltip += '<img class="Craft_Pic" src="img/'+this.code+'.jpg">';
+			tooltip += '<div class="Craft_cost">';
+			for (var j in this.basePrice) {
+				//that part needs work
+				price = Beautify(Game.GetPrice(this,j));
+				var Mat = Game.TypeOfMat(this.basePrice[j].name);
+				if (Mat.amount < this.basePrice[j].val) price = price.fontcolor("red");
+				tooltip += '<div class="'+this.basePrice[j].name+'">'+this.basePrice[j].name+' : <strong>'+price+'</strong></div> ';
+			}
+			tooltip += '</div><hr class="clear">';
+			tooltip += '<div>sells for : '+Beautify(this.gold)+' gold</div><hr>';
+			tooltip += '<div>'+this.desc+'</div>';
+			return tooltip;
+		}		
 		
 		this.Finish = function()
 		{
@@ -404,9 +442,17 @@ Game.Init = function(){
 		return this;
 	} 
 	
-	new Game.Object('sword','sword','','',[{ name : "iron", val: 10 }],2);
-	new Game.Object('sword2','sword2','','',[{ name : "wood", val: 12 }],4);
-	new Game.Object('sword3','sword3','','',[{ name : "leather", val: 12 }],3);
+	new Game.Object('sword','sword','sword','',100,[{ name : "iron", val: 10 }],2);
+	new Game.Object('sword2','sword2','sword','',100,[{ name : "wood", val: 12 }],4);
+	new Game.Object('sword3','sword3','sword','',100,[{ name : "leather", val: 12 },{ name : "leather", val: 12 },{ name : "leather", val: 12 },{ name : "leather", val: 12 },{ name : "leather", val: 12 }],3);
+	
+	new Game.Object('dagger','dagger','dagger','',100,[{ name : "iron", val: 12 },{ name : "leather", val: 12 }],3);
+	new Game.Object('dagger2','dagger2','dagger','',100,[{ name : "iron", val: 12 },{ name : "leather", val: 12 }],3);
+	new Game.Object('dagger3','dagger3','dagger','',100,[{ name : "iron", val: 12 },{ name : "leather", val: 12 }],3);
+	
+	new Game.Object('axe','axe','axe','',100,[{ name : "iron", val: 12 },{ name : "leather", val: 12 }],3);
+	new Game.Object('axe2','axe2','axe','',100,[{ name : "iron", val: 12 },{ name : "leather", val: 12 }],3);
+	new Game.Object('axe3','axe3','axe','',100,[{ name : "iron", val: 12 },{ name : "leather", val: 12 }],3);
 	
 	Game.GetCraftDOM = function(index)
 		{
@@ -479,10 +525,22 @@ Game.Init = function(){
 				Game.RemoveTooltip(this);
 				Game.GetTooltip(this);
 			}
-			
-			
-
 		}
+		
+		this.ComputeTooltip=function()
+		{
+			var tooltip = ''
+			tooltip += '<div class="title"><strong>'+this.name+'</strong></div><hr>';
+			for (var j in this.basePrice) {
+				//that part needs work
+				price = Beautify(Game.GetPrice(this,j));
+				var Mat = Game.TypeOfMat(this.basePrice[j].name);
+				if (Mat.amount < this.basePrice[j].val) price = price.fontcolor("red");
+				tooltip += '<div class="'+this.basePrice[j].name+'">'+this.basePrice[j].name+' : <strong>'+price+'</strong></div> ';
+			}
+			tooltip += '<hr><div>'+this.desc+'</div>';
+			return tooltip;
+		}	
 		
 		Game.Buildings[this.name]=this;
 		Game.BuildingsById[this.id]=this;
@@ -490,42 +548,24 @@ Game.Init = function(){
 		return this;
 	} 
 	
-	new Game.Building('Mine','improve iron generation from all sources',[{ name : "wood", val: 10 }]);
+	new Game.Building('Mine','improve iron generation from all sources',[{ name : "sword2", val: 1 }]);
 	new Game.Building('Fort','improve iron generation from all sources',[{ name : "gold", val: 12 }]);
 	new Game.Building('Lumber Mill','improve iron generation from all sources',[{ name : "gold", val: 20 },{ name : "wood", val: 40 }]);
 	
-	Game.ComputeTooltip=function(item)
-	{
-		var tooltip = ''
-		tooltip += '<div class="title"><strong>'+item.name+'</strong></div><hr>';
-		for (var j in item.basePrice) {
-			//that part needs work
-			price = Beautify(Game.GetPrice(item,j));
-			if (Game.Resources[item.basePrice[j].name].amount < item.basePrice[j].val) price = price.fontcolor("red");
-			tooltip += '<div class="'+item.basePrice[j].name+'">'+item.basePrice[j].name+' : <strong>'+price+'</strong></div> ';
-		}
-		tooltip += '<hr><div>'+item.desc+'</div>';
-		return tooltip;
-	}
-	
-	Game.GetTooltip=function(item) {
-		
-		//var tooltip = Game.CardsById[card].ComputeCardTooltip();
-		var tooltip = Game.ComputeTooltip(item);
-		$("#Building_Case_"+item.id).tooltipster({
+	Game.GetTooltip=function(item,dest) {
+		var tooltip = item.ComputeTooltip();
+		$("#"+dest).tooltipster({
 			content: $(tooltip),				//once the tooltips are html, $(tooltip) instead
 			theme: 'tooltipster-light',
-			maxWidth:350,
+			minWidth:350,
 			position:'left',
 			speed: 0
 		});
-		//var dest = '';
-		//if (item.title ==  "Building")
-		$("#Building_Case_"+item.id).tooltipster('show');
+		$("#"+dest).tooltipster('show');
 	}
 	
-	Game.RemoveTooltip=function(item) {
-		$("#Building_Case_"+item.id).tooltipster('destroy');
+	Game.RemoveTooltip=function(dest) {
+		$("#"+dest).tooltipster('destroy');
 
 	}
 	
@@ -576,6 +616,76 @@ Game.Init = function(){
 	new Game.Generator('Gen2_C','',[{ name : "leather", val: 12 }]);
 	
 	Game.GeneratorsById[1].active = 1;
+	
+	
+	//////////////////////////////////
+	//			ADVENTURERS			//
+	//////////////////////////////////
+	
+	
+	Game.Adventurers=[];
+	Game.AdventurersById=[];
+	Game.AdventurersN=0;
+	
+	Game.Adventurer=function(name,desc,choice)
+	{
+		this.id=Game.AdventurersN;
+		this.name=name;
+		//this.common=commonName;
+		this.choice=choice;
+		this.desc = desc;
+		this.locked=1;
+		this.busy=0;
+		this.title="Adventurer";
+		
+
+		Game.Adventurers[this.name]=this;
+		Game.AdventurersById[this.id]=this;
+		Game.AdventurersN++;
+		return this;
+	} 
+	
+	new Game.Adventurer('Bob','',["sword","dagger"]);
+	new Game.Adventurer('Tom','',["sword","axe"]);
+	new Game.Adventurer('Nob','',["axe","dagger"]);
+
+	Game.Adventurer_Arrives = function()
+	{
+		var choices = [];
+		for (var i in Game.AdventurersById)
+		{
+			if (!Game.AdventurersById[i].busy) choices.push(i)
+		}
+		if (choices!=[])
+		{
+			var adv = ~~(Math.random()*choices.length);
+			me = Game.AdventurersById[choices[adv]];
+			choices = [];
+			for (var i in Game.ObjectsById)
+			{			
+				if (me.choice.includes(Game.ObjectsById[i].type)) choices.push(i);
+			}
+			var chosen = ~~(Math.random()*choices.length);
+			Game.AdvInStore.push({adv:me,chosen:chosen});
+			var str = Game.GetStoreDOM(Game.AdvInStore.length-1);
+			$('#RightColumn').append(str);
+			me.busy = 1;
+		}
+	}
+	
+	Game.GetStoreDOM = function(index)
+		{
+			var me = Game.AdvInStore[index];
+			var str = '';
+			str+= '<div id="Adv_Store_Case_'+index+'" class="Adv_Store_Case">';
+				
+			str+= '<img src="img/'+Game.ObjectsById[Game.AdvInStore[index].chosen].code+'.png">';
+			
+			
+			str+='</div>';
+			return str;
+		}
+	
 	//////////////////////////////////
 	//			RESSOURCES			//
 	//////////////////////////////////
