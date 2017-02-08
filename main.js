@@ -152,14 +152,16 @@ Game.Init = function(){
 	
 	Game.BuildMenu=function(){
 		var str = '';
-		str+= '<button class="inline" id="menu_wall">bob</button>';
-		str+= '<button class="inline" id="menu_stats">bib</button>';
-		str+= '<button class="inline" id="menu_options">bub</button>';
+		str+= '<button class="inline" id="menu_generators">generators</button>';
+		str+= '<button class="inline" id="menu_city">city</button>';
+		str+= '<button class="inline" id="menu_craft">craft</button>';
+		str+= '<button class="inline" id="menu_stats">stats</button>';
 
 		$('#RightColumn').html(str);
-		AddEvent(l('menu_wall'),'click',function(){Game.ShowMenu('generators');});
-		AddEvent(l('menu_stats'),'click',function(){Game.ShowMenu('city');});
-		AddEvent(l('menu_options'),'click',function(){Game.ShowMenu('craft');});
+		AddEvent(l('menu_generators'),'click',function(){Game.ShowMenu('generators');});
+		AddEvent(l('menu_city'),'click',function(){Game.ShowMenu('city');});
+		AddEvent(l('menu_craft'),'click',function(){Game.ShowMenu('craft');});
+		AddEvent(l('menu_stats'),'click',function(){Game.ShowMenu('stats');});
 
 
 
@@ -177,6 +179,13 @@ Game.Init = function(){
 			Game.onMenu=what;
 			Game.UpdateMenu();
 		}
+		
+	Game.ShowCraftMenu=function(what)
+		{
+			if (!what || what=='') what=Game.onCraftMenu;
+			Game.onCraftMenu=what;
+			Game.UpdateMenu();
+		}	
 	
 	Game.UpdateMenu=function(){
 		var str = '';
@@ -211,16 +220,27 @@ Game.Init = function(){
 		if (Game.onMenu=='craft') 
 		{
 			str+='<hr><div  class="section">Workshop</div><hr>';
-			str+='<div>';
+			str+='<div id="Craft_Menu">';
 			for (var i in Game.ItemTypes)
 			{
-				//str+='<button>'++'</button>';
+				str+='<div onclick="Game.ShowCraftMenu(\''+Game.ItemTypes[i]+'\')" class="Craft_Menu_Tab">';
+				str+='<img src="img/'+Game.ItemTypes[i]+'.png">';
+				str+='<div>'+Game.ItemTypes[i]+'</div>';
+				str+='</div>';
 			}
 			str+='</div>';
+			str+='<hr>';
 			str+='<div id="craft_section_1">';
-			for (var i in Game.Objects) {
+			for (var i in Game.Objects) 
+			{
 				var me = Game.Objects[i];
-				if(Game.onCraftMenu == me.type) str+= '<img id="Craft_Item_1_'+me.id+'" onmouseout="Game.RemoveTooltip(\'Craft_Item_1_'+me.id+'\')" onmouseover="Game.GetTooltip(Game.ObjectsById['+me.id+'],\'Craft_Item_1_'+me.id+'\')" onclick="Game.ObjectsById['+me.id+'].Craft()" src="img/'+me.code+'.png">';
+				if(Game.onCraftMenu == me.type)
+				{
+					str+='<div class="Craft_Item" id="Craft_Item_1_'+me.id+'" onmouseout="Game.RemoveTooltip(\'Craft_Item_1_'+me.id+'\')" onmouseover="Game.GetTooltip(Game.ObjectsById['+me.id+'],\'Craft_Item_1_'+me.id+'\')" onclick="Game.ObjectsById['+me.id+'].Craft()" >';
+					str+= '<img src="img/'+me.code+'.png">';
+					str+='<div class="">'+me.name+'</div>';
+					str+='</div>';
+				}								
 			}
 			str+='</div>';
 			str+='<div id="craft_section_2">';
@@ -232,7 +252,13 @@ Game.Init = function(){
 		}
 		if (Game.onMenu=='stats') 
 		{
-			str += 'satd';
+			str+='<hr><div  class="section">Stats</div><hr>';
+			str += '<div id="Stats_Storage">';
+			for (var i in Game.Objects) {
+				var me = Game.Objects[i];
+				if(me.amount > 0) str+= '<img id="Stats_Item_'+me.id+'" onmouseout="Game.RemoveTooltip(\'Stats_Item_'+me.id+'\')" onmouseover="Game.GetTooltip(Game.ObjectsById['+me.id+'],\'Stats_Item_'+me.id+'\')" src="img/'+me.code+'.png">';
+			}
+			str += '</div>';
 		}
 		if (Game.onMenu=='options') 
 		{
@@ -418,6 +444,7 @@ Game.Init = function(){
 						//WIP can be problematic since it makes no difference between several items with the same id, but the chances are they were crafted as the same time are very low
 						Game.CraftsInProgress.splice(i,1);
 						this.Remove(i);
+						//Game.UpdateMenu();
 						break;
 					}
 				}
@@ -428,7 +455,7 @@ Game.Init = function(){
 		this.Remove = function(index)
 		{
 			$('#Craft_Case_'+index).remove();
-			//very messy WIP
+			//very messy WIP HAS TO CHANGE
 			for (var i = Number(index+1); i<=Game.CraftsInProgress.length ;i++)
 			{
 				//alert(i);
@@ -609,7 +636,7 @@ Game.Init = function(){
 	} 
 	
 	new Game.Generator('Gen1_A','',[{ name : "iron", val: 10 }]);
-	new Game.Generator('Gen1_B','',[{ name : "wood", val: 12 }]);
+	new Game.Generator('Gen1_B','',[{ name : "wood", val: 25 }]);
 	new Game.Generator('Gen1_C','',[{ name : "leather", val: 12 }]);
 	new Game.Generator('Gen2_A','',[{ name : "iron", val: 10 }]);
 	new Game.Generator('Gen2_B','',[{ name : "wood", val: 12 }]);
@@ -666,12 +693,38 @@ Game.Init = function(){
 				if (me.choice.includes(Game.ObjectsById[i].type)) choices.push(i);
 			}
 			var chosen = ~~(Math.random()*choices.length);
-			Game.AdvInStore.push({adv:me,chosen:chosen});
+			Game.AdvInStore.push({adv:me.id,chosen:chosen});
 			var str = Game.GetStoreDOM(Game.AdvInStore.length-1);
 			$('#RightColumn').append(str);
 			me.busy = 1;
 		}
 	}
+	
+	Game.Adventurer_Satisfy = function(index)
+	{
+		it = Game.ObjectsById[Game.AdvInStore[index].chosen];
+		if (it.amount > 0)
+		{
+			Game.Spend(it.name,1);
+			Game.Earn("gold",it.gold);
+			Game.Adventurer_Leaves(index);
+		}	
+	}
+	
+	Game.Adventurer_Leaves = function(index)
+	{
+		Game.AdventurersById[Game.AdvInStore[index].adv].busy = 0;
+		Game.AdvInStore.splice(index,1);
+		$('#Adv_Store_Case_'+index).remove();
+		
+		//very messy WIP
+		for (var i = Number(index+1); i<=Game.AdvInStore.length ;i++)
+			{
+				$('#Adv_Store_Case_'+i).attr("id", "Adv_Store_Case_"+(i-1));
+				$('#Adv_Store_Case_'+i+' .accept').attr("onclick",'Game.Adventurer_Satisfy('+(i-1)+')');
+				$('#Adv_Store_Case_'+i+' .refuse').attr("onclick",'Game.Adventurer_Leaves('+(i-1)+')');
+			}
+	}	
 	
 	Game.GetStoreDOM = function(index)
 		{
@@ -679,15 +732,22 @@ Game.Init = function(){
 			var str = '';
 			str+= '<div id="Adv_Store_Case_'+index+'" class="Adv_Store_Case">';
 				
-			str+= '<img src="img/'+Game.ObjectsById[Game.AdvInStore[index].chosen].code+'.png">';
-			
-			
+			str+= '<img class="float" height="100%" width="70px" src="img/'+Game.AdventurersById[me.adv].code+'.png">';
+			str+= '<img class="store_item_img" src="img/'+Game.ObjectsById[me.chosen].code+'.png">';
+				str+= '<div class="Adv_Store_SubCase" height="100%" >';
+				str+= '<div>'+Game.ObjectsById[me.chosen].name+'</div>';
+					str+='<div>';
+					str+= '<img onclick="Game.Adventurer_Satisfy('+index+')" class="store_icons accept" src="img/accept.png">';
+					str+= '<img onclick="Game.Adventurer_Leaves('+index+')" class="store_icons refuse" src="img/refuse.png">';
+					str+= '<img class="store_icons suggest" src="img/suggest.png">';
+					str+='</div>';
+				str+='</div>';
 			str+='</div>';
 			return str;
 		}
 	
 	//////////////////////////////////
-	//			RESSOURCES			//
+	//			RESOURCES			//
 	//////////////////////////////////
 	
 	
@@ -701,7 +761,7 @@ Game.Init = function(){
 		this.name=name;
 		this.common=commonName;
 		this.amount=0;
-		this.max=0;
+		this.max=100;
 		this.Ps=4;
 		//this.total=0;
 		//this.byhand=0;
@@ -832,6 +892,7 @@ Game.Logic=function() {
 
 	for (var i in Game.Resources) {
 		Game.Earn(i,Game.Resources[i].Ps/Game.fps);//add resource each tick
+		if ((Game.Resources[i].amount > Game.Resources[i].max) && (Game.Resources[i].max != 0)) Game.Resources[i].amount=Game.Resources[i].max;
 		$("#"+i+"_Amount").html(Beautify(Game.Resources[i].amount));
 	}
 	
