@@ -348,6 +348,16 @@ Game.Init = function(){
 		return i;
 	}
 	
+	Game.CraftPriceValue=function(type,value,min)
+	{
+		for (var i in Game.ObjectsById)
+		{			
+			if (Game.ObjectsById[i].type == type && (value/Game.ObjectsById[i].gold)<min ) break;
+		}
+		return[i-1,(value/Game.ObjectsById[i-1].gold)];
+		
+	}
+	
 	Game.TypeOfMat=function(what)
 	{
 		if (Game.Resources[what])	return Game.Resources[what];
@@ -443,8 +453,8 @@ Game.Init = function(){
 					{
 						//WIP can be problematic since it makes no difference between several items with the same id, but the chances are they were crafted as the same time are very low
 						Game.CraftsInProgress.splice(i,1);
-						this.Remove(i);
-						//Game.UpdateMenu();
+						//this.Remove(i);
+						Game.UpdateMenu();
 						break;
 					}
 				}
@@ -490,7 +500,7 @@ Game.Init = function(){
 			str+= '<img src="img/'+Game.ObjectsById[me.id].code+'.png">';
 			
 			str+='<div class="crafting_bar"><div class="crafting_loading"></div>';
-			str+='<p><strong><span class="bar_text">'+Game.GetTime2(me.time/Game.fps)+'</span></strong></p>';
+			str+='<p><strong><span class="bar_text">'+Game.GetTime2(Math.ceil(me.time/Game.fps))+'</span></strong></p>';
 			str+='</div>';
 			
 			str+= '<img src="img/cancel.png">';
