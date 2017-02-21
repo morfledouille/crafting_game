@@ -264,7 +264,7 @@ Game.Init = function(){
 				var me = Game.Upgrades[i];
 				if(me.unlocked && !me.bought)
 				{
-					str+='<div class="Craft_Item" id="Upgrade_Item_1_'+me.id+'" onmouseout="Game.RemoveTooltip(\'Upgrade_Item_1_'+me.id+'\')" onmouseover="Game.GetTooltip(Game.UpgradesById['+me.id+'],\'Upgrade_Item_1_'+me.id+'\')" onclick="Game.UpgradesById['+me.id+'].Buy()" >';
+					str+='<div class="Craft_Item" id="Upgrade_Case_'+me.id+'" onmouseout="Game.RemoveTooltip(\'Upgrade_Case_'+me.id+'\')" onmouseover="Game.GetTooltip(Game.UpgradesById['+me.id+'],\'Upgrade_Case_'+me.id+'\')" onclick="Game.UpgradesById['+me.id+'].Buy()" >';
 					str+= '<img class="Pic" src="img/'+me.code+'.png">';
 					str+='<div>'+me.name+'</div>';
 					str+='</div>';
@@ -277,7 +277,7 @@ Game.Init = function(){
 				var me = Game.Researches[i];
 				if(me.unlocked && !me.bought)
 				{
-					str+= '<div class="Building_Case" id="Building_Case_'+me.id+'" onmouseout="Game.RemoveTooltip(\'Building_Case_'+me.id+'\')" onmouseover="Game.GetTooltip(Game.BuildingsById['+me.id+'],\'Building_Case_'+me.id+'\')" onclick="Game.BuildingsById['+me.id+'].Buy()">';
+					str+= '<div class="Building_Case" id="Research_Case_'+me.id+'" onmouseout="Game.RemoveTooltip(\'Research_Case_'+me.id+'\')" onmouseover="Game.GetTooltip(Game.ResearchesById['+me.id+'],\'Research_Case_'+me.id+'\')" onclick="Game.ResearchesById['+me.id+'].Buy()">';
 					str+='<img class="Pic" src="img/'+me.name+'.png">';
 					str+='<div class="Research_Name">'+me.name+'</div>';
 					//str+='<div class="Building_Amount">'+me.amount+'</div>';
@@ -334,6 +334,7 @@ Game.Init = function(){
 		}
 		
 		$('#CenterColumn').html(str);
+		Game.Update_Buyables();
 	}			
 
 	Game.UpdateCustomers=function()
@@ -521,7 +522,49 @@ Game.Init = function(){
 				$(this).attr('class', classes);
 			});
 		}
-	
+		if (Game.onMenu == 'city')
+		{
+			for (var i in Game.BuildingsById)
+			{
+				var me = Game.BuildingsById[i];
+				if (me.unlocked)
+				{
+					var classes = 'Building_Case ';
+					if (Game.Enough_Resources(me))
+					{
+						classes += 'buyable';
+					}
+					else
+					{
+						classes += 'unbuyable';
+					}
+					$('#Building_Case_'+i).attr('class', classes);	
+				}
+				
+			}
+		}
+		if (Game.onMenu == 'research')
+		{
+			for (var i in Game.Researches) 
+			{
+				var me = Game.Researches[i];
+				if(me.unlocked && !me.bought)
+				{
+					var classes = 'Building_Case ';
+					if (Game.Enough_Resources(me))
+					{
+						classes += 'buyable';
+					}
+					else
+					{
+						classes += 'unbuyable';
+					}
+					$('#Research_Case_'+i).attr('class', classes);
+				}
+												
+			}
+		}
+		
 	}
 	
 	//////////////////////////////////
@@ -871,6 +914,23 @@ Game.Init = function(){
 				Game.UpdateMenu();
 				
 			}
+		}	
+		
+		this.ComputeTooltip=function()
+		{
+			var tooltip = ''
+			tooltip += '<div class="title"><strong>'+this.name+'</strong></div><hr>';
+			for (var j in this.basePrice) {
+				//that part needs work
+				ret = Game.GetPrice(this,j);
+				price = Beautify(ret.val);
+				var Mat = Game.TypeOfMat(ret.name);
+				//if ($.isArray(Mat.amount))
+				//if (Mat.amount < ret.val) price = price.fontcolor("red");
+				tooltip += '<div class="'+ret.name+'">'+ret.name+' : <strong>'+price+'</strong></div> ';
+			}
+			tooltip += '<hr><div>'+this.desc+'</div>';
+			return tooltip;
 		}	
 
 		Game.Upgrades[this.name]=this;

@@ -34,11 +34,11 @@ body {
 }
 
 .buyable:hover{
-	border: 5px inset;
+	//border: 5px inset;
 	background: lightgrey;
 
-	//border: 5px solid transparent;
-	//border-image: url(backgrounds/Basic_border2.png) 5;
+	border: 5px solid transparent;
+	border-image: url(img/Basic_border2.png) 5;
 }
 
 
@@ -342,7 +342,7 @@ body {
 
 
 .Adv_Case{
-	width:100%;
+	width:calc(100% - 10px);
 	height:150px;
 	border: 5px solid transparent;
 	border-image: url(img/Basic_border.png) 5;
@@ -363,7 +363,7 @@ body {
 
 .xp_bar{
 	height:20px;
-	width:100%;
+	width:calc(100% - 10px);
 	//display:inline-block;
 	border: 5px outset;
 	position:absolute;
