@@ -68,12 +68,12 @@ body {
 .inline{
 	display:inline-block;
 }
-
+/*
 #CenterColumn td,th{
 	border: 2px solid black;
     border-collapse: collapse;
 }
-
+*/
 .Generator_Case{
 	//border: 5px solid black;
 	height:100px;
@@ -220,6 +220,23 @@ body {
 	font-weight:bold;
 }
 
+.Craft_Item_Res_Price{
+	margin-left:20px;
+	padding:10px;
+	display:inline-block;
+}
+
+.Craft_Item_Name{
+	position:relative;
+	top:20px;
+	left:30px;
+	display:inline-block;
+}
+
+.research_item{
+	background: linear-gradient(lightblue, blue);
+}
+
 .level{
 	position:absolute;
 	right:5px;
@@ -241,12 +258,6 @@ body {
 }
 
 
-.Craft_Item div{
-	position:relative;
-	top:20px;
-	left:30px;
-	display:inline;
-}
 
 .crafting_bar p{
 	margin-top: -25px;
@@ -340,19 +351,53 @@ body {
 	padding-left:10px;
 }
 
-
+/*
 .Adv_Case{
 	width:calc(100% - 10px);
-	height:150px;
+	height:200px;
 	border: 5px solid transparent;
 	border-image: url(img/Basic_border.png) 5;
 	position:relative;
 }
+*/
+.Adv_Case{
+	width:1000px;
+	height:200px;
+	background-color:white;
+	border: 5px solid transparent;
+	border-image: url(img/Basic_border.png) 5;
+	position:absolute;
+	top:300px;
+	left:300px;
+}
+
+.Adv_Case_Mini{
+	width:150px;
+	height:250px;
+	border: 5px solid transparent;
+	border-image: url(img/Basic_border.png) 5;
+	display:inline-block;
+	margin:20px;
+	position:relative;
+	cursor:pointer;
+}
+.Adv_Case_Mini:hover{
+	border: 5px solid transparent;
+	border-image: url(img/Basic_border2.png) 5;
+}
+
 
 .Adv_Case td{
-	width:70px;
-	height:70px;
+	width:95px;
+	//height:70px;
 	cursor:pointer;
+	text-align: center;
+}
+
+.Adv_equipable_img{
+	width:25px;
+	height:25px;
+	margin:2px;
 }
 
 .xp_bar p{
@@ -361,14 +406,49 @@ body {
 	font-weight: bold;
 }
 
+.Case_Level{
+	position:absolute;
+	left:-5px;
+	top:-5px;
+	width:30px;
+	height:30px;
+	text-align: center;
+	font-weight: bold;
+	font-size: 1.5em;
+	border: 5px solid transparent;
+	border-image: url(img/Basic_border.png) 5;
+}
+
+.Case_Name{
+	position:absolute;
+	left:50px;
+	top:5px;
+	font-weight: bold;
+	font-size: 1.25em;
+	
+}
+
+.Adv_Img{
+	position:absolute;
+	left:0px;
+	top:35px;
+	width:90px;
+	height:120px;
+}
+
+.equip_table{
+	position:absolute;
+	right:50px;
+	top:10px;
+}
+
 .xp_bar{
 	height:20px;
-	width:calc(100% - 10px);
-	//display:inline-block;
+	width:50%;
 	border: 5px outset;
 	position:absolute;
-	//top:50px;
-	bottom:0px;
+	top:10px;
+	right:10px;
 	//margin-right:30px;
 }
 
